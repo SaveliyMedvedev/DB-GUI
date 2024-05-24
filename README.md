@@ -1,6 +1,6 @@
 # DB-GUI
 
-This project is a graphical interface for obtaining information from a MySQL database. An alternative name for this project is "Theater Box Office". 
+This project is a graphical interface for obtaining information from a MySQL database. An alternative name for this project is **_"Theater Box Office"_**. 
 
 
 We studied SQL queries in my college (I'm in my second year of study) and prepared an assignment for the exam. I was bored, so I decided to make a simple interface for 3 requests.
