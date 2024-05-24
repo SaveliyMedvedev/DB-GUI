@@ -8,85 +8,86 @@ from queries.query_price_ticket import execute_query_price_ticket
 from queries.query_show_tickets import execute_query_show_tickets
 
 
-class MyApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-
-        self.title("Театральная касса")
+class DateForm(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Какие спектакли идут в определенный день?")
         self.geometry("800x400")
-
         self.create_widgets()
 
     def create_widgets(self):
-        self.label = ttk.Label(self, text="Какую информацию желаете получить?")
-        self.label.pack(pady=15)
-
-        self.button1 = ttk.Button(
-            self,
-            text="Какие спектакли идут в определенный день?",
-            command=self.open_form1,
-        )
-        self.button2 = ttk.Button(
-            self,
-            text="Есть ли билеты на конкретный спектакль?",
-            command=self.open_form2,
-        )
-        self.button3 = ttk.Button(
-            self, text="Сколько стоит конкретный билет?", command=self.open_form3
-        )
-
-        self.button1.pack(pady=20)
-        self.button2.pack(pady=20)
-        self.button3.pack(pady=20)
-
-    def open_form1(self):
-        # Создаем форму
-        form_window = tk.Toplevel(self)
-        form_window.title("Какие спектакли идут в определенный день?")
-        form_window.geometry("800x400")
-
-        tk.Label(form_window, text="Введите нужную дату в формате ГГГГ-ММ-ДД:").pack(
-            pady=5
-        )
-        date_entry = ttk.Entry(form_window, width=40)
-        date_entry.pack(pady=10)
-
-        # Кнопка для отправки формы
-        submit_button = ttk.Button(
-            form_window,
-            text="Отправить",
-            command=lambda: self.submit_form(param=1, date_entry=date_entry),
-        )
+        tk.Label(self, text="Введите нужную дату в формате ГГГГ-ММ-ДД:").pack(pady=5)
+        self.date_entry = ttk.Entry(self, width=40)
+        self.date_entry.pack(pady=10)
+        submit_button = ttk.Button(self, text="Отправить", command=self.submit_form)
         submit_button.pack(pady=10)
 
-    def open_form2(self):
-        # Создаем форму
+    def submit_form(self):
+        date = self.date_entry.get()
+        results = execute_query_date(date)
+        self.display_results(results)
+
+    def display_results(self, results):
+        results_window = tk.Toplevel(self)
+        results_window.title("Спектакли в выбранный день")
+        results_window.geometry("600x400")
+
+        if results:
+            tree = ttk.Treeview(
+                results_window,
+                columns=("title", "author", "theater"),
+                show="headings",
+            )
+
+            tree.heading("title", text="Название")
+            tree.heading("author", text="Автор")
+            tree.heading("theater", text="Театр")
+
+            # Добавляем данные в таблицу
+
+            for row in results:
+                tree.insert("", "end", values=row)
+            tree.pack(expand=True, fill="both")
+
+        else:
+            tk.Label(results_window, text="В этот день спектаклей нет").pack(pady=20)
+
+        tree.pack(expand=True, fill="both")
+
+
+class TicketsForm(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Есть ли билеты на конкретный спектакль?")
+        self.geometry("800x400")
+        self.create_widgets()
+
+    def create_widgets(self):
+
         form_window = tk.Toplevel(self)
         form_window.title("Есть ли билеты на конкретный спектакль?")
         form_window.geometry("800x400")
 
         tk.Label(
-            form_window,
+            self,
             text="Введите номер нужного спектакля и нужную дату в формате ГГГГ-ММ-ДД",
         ).pack(pady=5)
 
-        entry_frame = ttk.Frame(form_window)
-        entry_frame.pack(pady=10)
+        self.entry_frame = ttk.Frame(self)
+        self.entry_frame.pack(pady=10)
 
-        play_id_entry = ttk.Entry(entry_frame, width=5)
-        play_id_entry.grid(row=0, column=0, padx=(0, 10))
+        self.play_id_entry = ttk.Entry(self.entry_frame, width=5)
+        self.play_id_entry.grid(row=0, column=0, padx=(0, 10))
 
-        date_entry = ttk.Entry(entry_frame, width=20)
-        date_entry.grid(row=0, column=1, padx=(0, 10))
+        self.date_entry = ttk.Entry(self.entry_frame, width=20)
+        self.date_entry.grid(row=0, column=1, padx=(0, 10))
 
-        button_play1 = ttk.Button(
-            entry_frame,
+        button_play = ttk.Button(
+            self.entry_frame,
             text="Подтвердить",
-            command=lambda: self.submit_form(
-                param=2, play_id_entry=play_id_entry, date_entry=date_entry
-            ),
+            command=self.submit_form,
         )
-        button_play1.grid(row=0, column=2)
+        button_play.grid(row=0, column=2)
 
         # Вывод таблицы спектаклей
 
@@ -94,7 +95,7 @@ class MyApp(tk.Tk):
 
         if results:
             self.tree = ttk.Treeview(
-                form_window, columns=("play_id", "title", "author"), show="headings"
+                self, columns=("play_id", "title", "author"), show="headings"
             )
             self.tree.heading("play_id", text="Номер")
             self.tree.heading("title", text="Название")
@@ -107,26 +108,66 @@ class MyApp(tk.Tk):
             # Если результатов нет, добавляем строку с сообщением
             self.tree.insert("", "end", values=("Cпектаклей нет", "", ""))
 
-    def open_form3(self):
-        # Создаем форму
+    def submit_form(self):
+        play_id = self.play_id_entry.get()
+        date = self.date_entry.get()
+        results = execute_query_tickets(play_id, date)
+
+        self.display_results(results)
+
+    def display_results(self, results):
+        results_window = tk.Toplevel(self)
+        results_window.title("Билеты")
+        results_window.geometry("600x400")
+
+        if results:
+            tree = ttk.Treeview(
+                results_window,
+                columns=("count_tickets", "theater"),
+                show="headings",
+            )
+            tree.heading("count_tickets", text="Количество билетов")
+            tree.heading("theater", text="Театр")
+            # Добавляем данные в таблицу
+            for row in results:
+                tree.insert("", "end", values=row)
+
+            tree.pack(expand=True, fill="both")
+        else:
+            tk.Label(results_window, text="В этот день спектаклей нигде нет").pack(
+                pady=20
+            )
+
+        tree.pack(expand=True, fill="both")
+
+
+class PriceTicketForm(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Сколько стоит конкретный билет?")
+        self.geometry("2000x400")
+        self.create_widgets()
+
+    def create_widgets(self):
+
         form_window = tk.Toplevel(self)
         form_window.title("Сколько стоит конкретный билет?")
         form_window.geometry("2000x400")
 
-        tk.Label(form_window, text="Введите номер нужного билета").pack(pady=5)
+        tk.Label(self, text="Введите номер нужного билета").pack(pady=5)
 
-        entry_frame = ttk.Frame(form_window)
-        entry_frame.pack(pady=10)
+        self.entry_frame = ttk.Frame(self)
+        self.entry_frame.pack(pady=10)
 
-        ticket_id_entry = ttk.Entry(entry_frame, width=5)
-        ticket_id_entry.grid(row=0, column=0, padx=(0, 10))
+        self.ticket_id_entry = ttk.Entry(self.entry_frame, width=5)
+        self.ticket_id_entry.grid(row=0, column=0, padx=(0, 10))
 
-        button_play1 = ttk.Button(
-            entry_frame,
+        button_play = ttk.Button(
+            self.entry_frame,
             text="Подтвердить",
-            command=lambda: self.submit_form(param=3, ticket_id_entry=ticket_id_entry),
+            command=self.submit_form,
         )
-        button_play1.grid(row=0, column=1)
+        button_play.grid(row=0, column=1)
 
         # Вывод таблицы билетов
 
@@ -134,7 +175,7 @@ class MyApp(tk.Tk):
 
         if results:
             self.tree = ttk.Treeview(
-                form_window,
+                self,
                 columns=(
                     "ticket_id",
                     "row_number",
@@ -161,84 +202,63 @@ class MyApp(tk.Tk):
             # Если результатов нет, добавляем строку с сообщением
             self.tree.insert("", "end", values=("Билетов нет", "", ""))
 
-    def submit_form(
-        self, param, date_entry=None, play_id_entry=None, ticket_id_entry=None
-    ):
-        match param:
-            case 1:
-                date = date_entry.get()
-                results = execute_query_date(date)
+    def submit_form(self):
+        ticket_id = self.ticket_id_entry.get()
+        results = execute_query_price_ticket(ticket_id)
 
-                results_window = tk.Toplevel(self)
-                results_window.title("Спектакли в выбранный день")
-                results_window.geometry("600x400")
+        self.display_results(results)
 
-                if results:
-                    tree = ttk.Treeview(
-                        results_window,
-                        columns=("title", "author", "theater"),
-                        show="headings",
-                    )
-                    tree.heading("title", text="Название")
-                    tree.heading("author", text="Автор")
-                    tree.heading("theater", text="Театр")
+    def display_results(self, results):
+        results_window = tk.Toplevel(self)
+        results_window.title("Стоимость выбранного билета")
+        results_window.geometry("600x400")
 
-                    # Добавляем данные в таблицу
-                    for row in results:
-                        tree.insert("", "end", values=row)
+        if results:
+            results_num = results[0][0]
+            # Доступ к первому элементу списка и кортежа
+            # Преобразуем Decimal в строку (если нужно)
+            results_num = str(results_num)
+            tk.Label(results_window, text=f"{results_num} $").pack(pady=20)
+        else:
+            tk.Label(results_window, text="Ошибка").pack(pady=10)
 
-                    tree.pack(expand=True, fill="both")
-                else:
-                    tk.Label(results_window, text="В этот день спектаклей нет").pack(
-                        pady=20
-                    )
 
-                tree.pack(expand=True, fill="both")
+class MyApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
 
-            case 2:
-                play_id = play_id_entry.get()
-                date = date_entry.get()
-                results = execute_query_tickets(play_id, date)
+        self.title("Театральная касса")
+        self.geometry("800x400")
 
-                results_window = tk.Toplevel(self)
-                results_window.title("Билеты")
-                results_window.geometry("600x400")
+        self.create_widgets()
 
-                if results:
-                    tree = ttk.Treeview(
-                        results_window,
-                        columns=("count_tickets", "theater"),
-                        show="headings",
-                    )
-                    tree.heading("count_tickets", text="Количество билетов")
-                    tree.heading("theater", text="Театр")
+    def create_widgets(self):
+        self.label = ttk.Label(self, text="Какую информацию желаете получить?")
+        self.label.pack(pady=15)
 
-                    # Добавляем данные в таблицу
-                    for row in results:
-                        tree.insert("", "end", values=row)
+        self.button1 = ttk.Button(
+            self,
+            text="Какие спектакли идут в определенный день?",
+            command=self.open_date_form,
+        ).pack(pady=20)
 
-                    tree.pack(expand=True, fill="both")
-                else:
-                    tk.Label(
-                        results_window, text="В этот день спектаклей нигде нет"
-                    ).pack(pady=20)
+        self.button2 = ttk.Button(
+            self,
+            text="Есть ли билеты на конкретный спектакль?",
+            command=self.open_tickets_form,
+        ).pack(pady=20)
 
-                tree.pack(expand=True, fill="both")
+        self.button3 = ttk.Button(
+            self,
+            text="Сколько стоит конкретный билет?",
+            command=self.open_price_ticket_form,
+        ).pack(pady=20)
 
-            case 3:
-                ticket_id = ticket_id_entry.get()
-                results = execute_query_price_ticket(ticket_id)
+    def open_date_form(self):
+        DateForm(self)
 
-                results_window = tk.Toplevel(self)
-                results_window.title("Стоимость выбранного билета")
-                results_window.geometry("600x400")
+    def open_tickets_form(self):
+        TicketsForm(self)
 
-                if results:
-                    results_num = results[0][
-                        0
-                    ]  # Доступ к первому элементу списка и кортежа
-                    # Преобразуем Decimal в строку (если нужно)
-                    results_num = str(results_num)
-                    tk.Label(results_window, text=f"{results_num} $").pack(pady=20)
-                else:
-                    tk.Label(results_window, text="Ошибка").pack(pady=10)
+    def open_price_ticket_form(self):
+        PriceTicketForm(self)
