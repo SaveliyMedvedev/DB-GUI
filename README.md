@@ -1,4 +1,4 @@
-#DB-GUI
+# DB-GUI
 
 This project is a graphical interface for obtaining information from a MySQL database. An alternative name for this project is "Theater Box Office". 
 
