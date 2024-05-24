@@ -1,11 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from queries.query_date import execute_query_date
-from queries.query_show_plays import show_plays
-from queries.query_tickets import execute_query_tickets
-from queries.query_price_ticket import execute_query_price_ticket
-from queries.query_show_tickets import execute_query_show_tickets
+import queries
 
 
 class DateForm(tk.Toplevel):
@@ -24,7 +20,7 @@ class DateForm(tk.Toplevel):
 
     def submit_form(self):
         date = self.date_entry.get()
-        results = execute_query_date(date)
+        results = queries.execute_query_date(date)
         self.display_results(results)
 
     def display_results(self, results):
@@ -91,7 +87,7 @@ class TicketsForm(tk.Toplevel):
 
         # Вывод таблицы спектаклей
 
-        results = show_plays()
+        results = queries.show_plays()
 
         if results:
             self.tree = ttk.Treeview(
@@ -111,7 +107,7 @@ class TicketsForm(tk.Toplevel):
     def submit_form(self):
         play_id = self.play_id_entry.get()
         date = self.date_entry.get()
-        results = execute_query_tickets(play_id, date)
+        results = queries.execute_query_tickets(play_id, date)
 
         self.display_results(results)
 
@@ -171,7 +167,7 @@ class PriceTicketForm(tk.Toplevel):
 
         # Вывод таблицы билетов
 
-        results = execute_query_show_tickets()
+        results = queries.execute_query_show_tickets()
 
         if results:
             self.tree = ttk.Treeview(
@@ -204,7 +200,7 @@ class PriceTicketForm(tk.Toplevel):
 
     def submit_form(self):
         ticket_id = self.ticket_id_entry.get()
-        results = execute_query_price_ticket(ticket_id)
+        results = queries.execute_query_price_ticket(ticket_id)
 
         self.display_results(results)
 
